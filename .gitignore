@@ -1,0 +1,5 @@
+/.pytest_cache/
+.idea/workspace.xml
+redisbrowser.egg-info
+**/.idea/*
+Pipfile.lock
