@@ -12,6 +12,7 @@ pytest = "*"
 pytest-cov = "*"
 pyparsing = "*"
 pytest-redis = "*"
+tox = "*"
 
 [requires]
 python_version = "3.9"
