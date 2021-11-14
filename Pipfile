@@ -7,9 +7,11 @@ name = "pypi"
 redis = ">=3"
 
 [dev-packages]
+build = "*"
 pytest = "*"
 pytest-cov = "*"
 pyparsing = "*"
+pytest-redis = "*"
 
 [requires]
 python_version = "3.9"

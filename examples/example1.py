@@ -1,7 +1,7 @@
 import json
 import sys
 
-from redisbrowser.redisbrowser import RedisBrowser
+from redis_browser import RedisBrowser
 
 
 def main():

@@ -1,46 +1,48 @@
-import json
-import sys
-from typing import Type, Any, TypeVar
+from typing import Any, TypeVar
 
 import redis
 
 R = TypeVar('R', bound='RedisBrowser')
+
 
 class RedisBrowserError(Exception):
     pass
 
 
 class RedisBrowser(object):
-    def __init__(self, host: str = 'localhost', port: int = 6379, key_delim: str = ':', _cls: Type[Any] = redis.StrictRedis,
+    def __init__(self, host: str = 'localhost', port: int = 6379, key_delim: str = ':', _client: redis.Redis = None,
                  offline=False, **kwargs: Any) -> None:
         """
 
         :param host: Redis host
         :param port: Redis port
         :param key_delim: key string deliminiter, default: ':'
-        :param _cls: class for Redis, default: 'redis.StrinctRedis'
+        :param _client: Redis client object, default: 'redis.StrictRedis'
         :param kwargs: additional arguments passed to StrictRedis
         """
         self._key_delim = key_delim
         self._host = host
         self._port = port
-        self._cls = _cls
+        self._client = _client
         self._redis = None
         self._kwargs = kwargs
         if offline:
             self._connected = False
         else:
-            self._redis = self._cls(host=host, port=port, **kwargs)
-            self._connected = True
+            if self._client:
+                self._redis = self._client
+                self._connected = True
+            else:
+                self._redis = self.connect()
 
-    def connect(self) -> R:
+    def connect(self) -> redis.Redis:
         """Invoke initialization of Redis class
 
         :return: RedisBrowser
         """
-        self._redis = self._cls(host=self._host, port=self._port, **self._kwargs)
+        rc = redis.StrictRedis(host=self._host, port=self._port, **self._kwargs)
         self._connected = True
-        return self
+        return rc
 
     def connected(self) -> bool:
         return self._connected
@@ -83,6 +85,7 @@ class RedisBrowser(object):
         """Create tree of keys based on match patten
 
         :param match: key pattern to search
+        :param keys: ad-hoc list of keys to buid keys tree
         :return: nested tree of alle keys match the pattern
         """
         if not keys:
@@ -91,3 +94,28 @@ class RedisBrowser(object):
         for key in keys:
             tree.update(self._mk_tree(key, tree=tree))
         return tree
+
+
+def redis_browser_cli():
+    import argparse
+    import json
+    ap = argparse.ArgumentParser('Print hirearchy tree or list of Redis keys')
+    ap.add_argument('-H', '--host', type=str, default='localhost', help='Redis host (default: %(default)s)')
+    ap.add_argument('-p', '--port', type=int, default=6379, help='Redis port (default: %(default)s)')
+    ap.add_argument('-d', '--delimiter', type=str, default=':',
+                    help='Delimiter useed for keys hirearchy (default: %(default)s)')
+    ap.add_argument('-m', '--match', type=str, nargs='?', default='*',
+                    help='Pattern to key match (default: %(default)s)')
+    ap.add_argument('cmd', nargs='?', choices=['tree', 'list'], default='tree',
+                    help='Print tree [default] of keys or list')
+    args = ap.parse_args()
+    rb = RedisBrowser(host=args.host,
+                      port=args.port,
+                      key_delim=args.delimiter,
+                      decode_responses=True)
+    if args.cmd == 'tree':
+        tree = rb.keys_tree(match=args.match)
+        print(json.dumps(tree, indent=4))
+    else:
+        keys = rb.keys(match=args.match)
+        print(json.dumps(keys, indent=4))
