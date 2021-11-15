@@ -22,11 +22,12 @@ def test_connected(redisdb):
 def test_single_key(redisdb):
     keys = ['css:foo:bar:biz']
     rb = RedisBrowser(decode_responses=True)
-    assert rb.keys_tree(keys=keys) == {'css': {'foo': {'bar': {'biz': ['biz']}}}}
+    assert rb.keys_tree(keys=keys) == {'css': {'foo': {'bar': {'biz': {'biz':'biz'}}}}}
 
 
 def test_keys_tree(redisdb):
     redisdb.set('css:foo:bar:baz', 'spam')
     redisdb.set('css:foo:ham', 'spam')
+    redisdb.set('css:foo', 'eggs')
     rb = RedisBrowser(decode_responses=True)
-    assert rb.keys_tree() == {'css': {'foo': {'bar': {'baz': ['baz']}, 'ham': ['ham']}}}
+    assert rb.keys_tree() == {'css': {'foo': {'bar': {'baz': {'baz': 'baz'}}, 'foo': 'foo', 'ham': {'ham': 'ham'}}}}

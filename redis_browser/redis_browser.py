@@ -72,7 +72,7 @@ class RedisBrowser(object):
         if not tree:
             tree = {}
         if key_delim not in key:
-            tree[key] = [key]
+            tree[key] = {key:key}  # leaf
         else:
             root, rest = key.split(key_delim, 1)
             if root in tree:
