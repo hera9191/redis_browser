@@ -13,6 +13,11 @@ pytest-cov = "*"
 pyparsing = "*"
 pytest-redis = "*"
 tox = "*"
+mypy = "*"
+types-redis = "*"
+types-setuptools = "*"
+types-toml = "*"
+black = "==21.11b0"
 
 [requires]
 python_version = "3.9"

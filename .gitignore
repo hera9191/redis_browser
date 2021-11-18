@@ -6,3 +6,6 @@ Pipfile.lock
 .coverage
 /dist/
 /.tox/
+*~
+**/__pycache__/
+.vscode

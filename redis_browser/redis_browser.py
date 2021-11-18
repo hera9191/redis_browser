@@ -1,8 +1,8 @@
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Optional, Union
 
 import redis
 
-R = TypeVar('R', bound='RedisBrowser')
+R = TypeVar("R", bound="RedisBrowser")
 
 
 class RedisBrowserError(Exception):
@@ -10,8 +10,15 @@ class RedisBrowserError(Exception):
 
 
 class RedisBrowser(object):
-    def __init__(self, host: str = 'localhost', port: int = 6379, key_delim: str = ':', _client: redis.Redis = None,
-                 offline=False, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        host: str = "localhost",
+        port: int = 6379,
+        key_delim: str = ":",
+        _client: redis.Redis = None,
+        offline=False,
+        **kwargs: Any
+    ) -> None:
         """
 
         :param host: Redis host
@@ -24,7 +31,7 @@ class RedisBrowser(object):
         self._host = host
         self._port = port
         self._client = _client
-        self._redis = None
+        self._redis: Optional[redis.Redis] = None
         self._kwargs = kwargs
         if offline:
             self._connected = False
@@ -51,8 +58,8 @@ class RedisBrowser(object):
         """Return list of all KEYS in the Redis database"""
         if not self._connected:
             raise RedisBrowserError("Not connected")
-        keys = []
-        cursor = '0'
+        keys: list[Union[str, int]] = []
+        cursor: Union[str, int] = "0"
         while cursor != 0:
             cursor, data = self._redis.scan(cursor=cursor, match=match, count=500)
             keys.extend(data)
@@ -72,7 +79,7 @@ class RedisBrowser(object):
         if not tree:
             tree = {}
         if key_delim not in key:
-            tree[key] = {key:key}  # leaf
+            tree[key] = {"__leaf__": True}  # leaf
         else:
             root, rest = key.split(key_delim, 1)
             if root in tree:
@@ -90,7 +97,7 @@ class RedisBrowser(object):
         """
         if not keys:
             keys = self.keys(match=match)
-        tree = {}
+        tree: dict[str, str] = {}
         for key in keys:
             tree.update(self._mk_tree(key, tree=tree))
         return tree
@@ -99,23 +106,47 @@ class RedisBrowser(object):
 def redis_browser_cli():
     import argparse
     import json
-    ap = argparse.ArgumentParser('Print hirearchy tree or list of Redis keys')
-    ap.add_argument('-H', '--host', type=str, default='localhost', help='Redis host (default: %(default)s)')
-    ap.add_argument('-p', '--port', type=int, default=6379, help='Redis port (default: %(default)s)')
-    ap.add_argument('-d', '--delimiter', type=str, default=':',
-                    help='Delimiter useed for keys hirearchy (default: %(default)s)')
-    ap.add_argument('-m', '--match', type=str, nargs='?', default='*',
-                    help='Pattern to key match (default: %(default)s)')
-    ap.add_argument('cmd', nargs='?', choices=['tree', 'list'], default='tree',
-                    help='Print tree [default] of keys or list')
+
+    ap = argparse.ArgumentParser("Print hirearchy tree or list of Redis keys")
+    ap.add_argument(
+        "-H",
+        "--host",
+        type=str,
+        default="localhost",
+        help="Redis host (default: %(default)s)",
+    )
+    ap.add_argument(
+        "-p", "--port", type=int, default=6379, help="Redis port (default: %(default)s)"
+    )
+    ap.add_argument(
+        "-d",
+        "--delimiter",
+        type=str,
+        default=":",
+        help="Delimiter useed for keys hirearchy (default: %(default)s)",
+    )
+    ap.add_argument(
+        "-m",
+        "--match",
+        type=str,
+        nargs="?",
+        default="*",
+        help="Pattern to key match (default: %(default)s)",
+    )
+    ap.add_argument(
+        "cmd",
+        nargs="?",
+        choices=["tree", "list"],
+        default="tree",
+        help="Print tree [default] of keys or list",
+    )
     args = ap.parse_args()
-    rb = RedisBrowser(host=args.host,
-                      port=args.port,
-                      key_delim=args.delimiter,
-                      decode_responses=True)
-    if args.cmd == 'tree':
+    rb = RedisBrowser(
+        host=args.host, port=args.port, key_delim=args.delimiter, decode_responses=True
+    )
+    if args.cmd == "tree":
         tree = rb.keys_tree(match=args.match)
         print(json.dumps(tree, indent=4))
-    else:
+    elif args.cmd == "list" or args.cmd is None:
         keys = rb.keys(match=args.match)
         print(json.dumps(keys, indent=4))
