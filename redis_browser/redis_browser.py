@@ -15,9 +15,9 @@ class RedisBrowser(object):
         host: str = "localhost",
         port: int = 6379,
         key_delim: str = ":",
-        _client: redis.Redis = None,
+        _client: Optional[redis.Redis] = None,
         offline=False,
-        **kwargs: Any
+        **kwargs
     ) -> None:
         """
 
@@ -54,19 +54,21 @@ class RedisBrowser(object):
     def connected(self) -> bool:
         return self._connected
 
-    def keys(self, match: str = None) -> list:
+    def keys(self, match: Optional[str] = None) -> list:
         """Return list of all KEYS in the Redis database"""
         if not self._connected:
             raise RedisBrowserError("Not connected")
         keys: list[Union[str, int]] = []
-        cursor: Union[str, int] = "0"
+        cursor: Any[str, int] = "0"
         while cursor != 0:
             cursor, data = self._redis.scan(cursor=cursor, match=match, count=500)
             keys.extend(data)
         keys.sort()
         return keys
 
-    def _mk_tree(self, key: str, tree: dict = None, key_delim: str = None) -> dict:
+    def _mk_tree(
+        self, key: str, tree: Optional[dict] = None, key_delim: Optional[str] = None
+    ) -> dict:
         """Make nested dictionary based on single key string and key_delim
 
         :param key: full key name
@@ -88,7 +90,9 @@ class RedisBrowser(object):
                 tree[root] = self._mk_tree(rest)
         return tree
 
-    def keys_tree(self, match: str = None, keys: list = None) -> dict:
+    def keys_tree(
+        self, match: Optional[str] = None, keys: Optional[list] = None
+    ) -> dict:
         """Create tree of keys based on match patten
 
         :param match: key pattern to search
