@@ -22,8 +22,10 @@ jobs:
       run: |
         sudo apt update
         sudo apt-get install -y redis-server
-        sudo systemctl stop redis.service
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
+    - name: Start redis.service
+      if: ${{ !env.ACT }}
+      run: sudo systemctl stop redis.service        
     - name: Test with tox
       run: tox
