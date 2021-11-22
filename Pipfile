@@ -7,16 +7,12 @@ name = "pypi"
 redis = ">=3"
 
 [dev-packages]
-build = "*"
 pytest = "*"
 pytest-cov = "*"
-pyparsing = "*"
 pytest-redis = "*"
 tox = "*"
 mypy = "*"
 types-redis = "*"
-types-setuptools = "*"
-types-toml = "*"
 black = "==21.11b0"
 flake8 = "*"
 
